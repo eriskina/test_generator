@@ -1,4 +1,4 @@
-from json import dump
+from json import dump, dumps
 from re import findall, match
 from random import randint
 def load_kb(filename = "kb.txt"):
@@ -31,24 +31,32 @@ def generate_questions(kb = {}, number = 10):
 				var = chr(ord(var)+1)
 
 			incorrect = []
+			a, b = 0, 0
 			for d1, r, d2 in kb.keys():
 				if d1 != den1 and r == rel:
 					incorrect += [d2]
 					keys_to_delete += [(d1, r, d2)]
-					if randint(1,3) > 1:
+					if a and b and randint(1,3) > 1:
 						res.update({var:{"is_correct":0, "text": ', '.join(incorrect)}})
 						var = chr(ord(var)+1)
 						incorrect = []
+					if not a: a = 1
+					if a and not b: b = 1
 			for key in set(keys_to_delete):
 				del kb[key]
 			return res
-		q = templ_key % den1
+
+		def generate_question(den, template):
+			for den1, rel, den2 in kb.keys():
+				if den2 == den:
+					return template % (den, den1)
+		q = generate_question(den1, templ_key)
 		answers = generate_answers(den1, rel, den2)
 		return {"%s) %s" % (i, q):answers}
 
 	question_templates = {
 		"%s это:" : (""),
-		"Что включает в себя %s" : {
+		"Что включает в себя %s, как элемент %s" : {
 			"function" : what_includes,
 			"relations" : (r"представлять собой"),
 			"weight": 1,
@@ -58,7 +66,7 @@ def generate_questions(kb = {}, number = 10):
 	}
 	res = {}
 	for i in range(1,number + 1):
-		templ_key = "Что включает в себя %s" # question_templates.keys[0]
+		templ_key = "Что включает в себя %s, как элемент %s" # question_templates.keys[0]
 		templ_relation_re = question_templates[templ_key]["relations"][0]
 		for den1, rel, den2 in kb.keys():
 			if match(templ_relation_re, rel):
@@ -71,3 +79,4 @@ if __name__ == '__main__':
 	q = generate_questions(kb, 10)
 	# print(q)
 	dump(q, open('q.json', 'w'), ensure_ascii = 0, indent = 4)
+	print(dumps(q, ensure_ascii = 0, indent = 4))
