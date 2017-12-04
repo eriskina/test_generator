@@ -31,25 +31,29 @@ def generate_questions(kb = {}, number = 10):
 				var = chr(ord(var)+1)
 
 			incorrect = []
-			a, b = 0, 0
+			need_to_generate = randint(2,4)
 			for d1, r, d2 in kb.keys():
 				if d1 != den1 and r == rel:
 					incorrect += [d2]
 					keys_to_delete += [(d1, r, d2)]
-					if a and b and randint(1,3) > 1:
+					if need_to_generate:
 						res.update({var:{"is_correct":0, "text": ', '.join(incorrect)}})
 						var = chr(ord(var)+1)
 						incorrect = []
-					if not a: a = 1
-					if a and not b: b = 1
-			for key in set(keys_to_delete):
-				del kb[key]
+						need_to_generate -= 1
+
+			# for key in set(keys_to_delete):
+			# 	del kb[key]
 			return res
 
 		def generate_question(den, template):
+			rez = template % (den, 0)
 			for den1, rel, den2 in kb.keys():
 				if den2 == den:
-					return template % (den, den1)
+					rez = template % (den, den1)
+					break
+			return rez
+
 		q = generate_question(den1, templ_key)
 		answers = generate_answers(den1, rel, den2)
 		return {"%s) %s" % (i, q):answers}
@@ -58,19 +62,22 @@ def generate_questions(kb = {}, number = 10):
 		"%s это:" : (""),
 		"Что включает в себя %s, как элемент %s" : {
 			"function" : what_includes,
-			"relations" : (r"представлять собой"),
+			"relations" : (r"представлять собой", "cостоять из"),
 			"weight": 1,
 		},
 		"%s состоит из" : 1,
 		"%s определяется как" : 1,
 	}
 	res = {}
-	for i in range(1,number + 1):
-		templ_key = "Что включает в себя %s, как элемент %s" # question_templates.keys[0]
-		templ_relation_re = question_templates[templ_key]["relations"][0]
-		for den1, rel, den2 in kb.keys():
-			if match(templ_relation_re, rel):
-				res.update(question_templates[templ_key]["function"](templ_key, den1, rel, den2))
+	i = 1
+	templ_key = "Что включает в себя %s, как элемент %s" # question_templates.keys[0]
+	templ_relation_re = question_templates[templ_key]["relations"][0]
+	for den1, rel, den2 in kb.keys():
+		if match(templ_relation_re, rel):
+			# print(den1, rel, templ_relation_re, den2)
+			i += 1
+			res.update(question_templates[templ_key]["function"](templ_key, den1, rel, den2))
+			if i > number:
 				break
 	return res
 
