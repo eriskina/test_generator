@@ -55,6 +55,7 @@ def train(corpus):
 			model[t0, t1].append((t2, freq/bi[t0, t1]))
 		else:
 			model[t0, t1] = [(t2, freq/bi[t0, t1])]
+	print(model)
 	return model
 
 def generate_sentence(model):
