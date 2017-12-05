@@ -1,4 +1,4 @@
-nltkfrom json import dump, dumps
+from json import dump, dumps
 from re import findall, match
 from random import randint
 def load_kb(filename = "kb.txt"):
@@ -24,7 +24,7 @@ def generate_questions(kb = {}, number = 10):
 			for i in range(n_correct):
 				correct = []
 				for d1, r, d2 in kb.keys():
-					if d1 == den1 and r == rel:
+					if d1 == den1 and r == rel and kb[(d1, r, d2)]:
 						correct += [d2]
 						keys_to_delete += [(d1, r, d2)]
 				res.update({var:{"is_correct":1, "text": ', '.join(correct)}})
@@ -33,23 +33,23 @@ def generate_questions(kb = {}, number = 10):
 			incorrect = []
 			need_to_generate = randint(2,4)
 			for d1, r, d2 in kb.keys():
-				if d1 != den1 and r == rel:
+				if d1 != den1 and r == rel and kb[(d1, r, d2)]:
 					incorrect += [d2]
-					keys_to_delete += [(d1, r, d2)]
+					# keys_to_delete += [(d1, r, d2)]
 					if need_to_generate:
 						res.update({var:{"is_correct":0, "text": ', '.join(incorrect)}})
 						var = chr(ord(var)+1)
 						incorrect = []
 						need_to_generate -= 1
 
-			# for key in set(keys_to_delete):
-			# 	del kb[key]
+			for key in set(keys_to_delete):
+				kb[key] = 0
 			return res
 
 		def generate_question(den, template):
 			rez = template % (den, 0)
 			for den1, rel, den2 in kb.keys():
-				if den2 == den:
+				if den2 == den and rel in ["представлять собой", "cостоять из"] and kb[(den1, rel, den2)]:
 					rez = template % (den, den1)
 					break
 			return rez
@@ -69,21 +69,23 @@ def generate_questions(kb = {}, number = 10):
 		"%s определяется как" : 1,
 	}
 	res = {}
-	i = 1
+	i = 0
 	templ_key = "Что включает в себя %s, как элемент %s" # question_templates.keys[0]
 	templ_relation_re = question_templates[templ_key]["relations"][0]
 	for den1, rel, den2 in kb.keys():
-		if match(templ_relation_re, rel):
+		if match(templ_relation_re, rel) and kb[(den1, rel, den2)]:
 			# print(den1, rel, templ_relation_re, den2)
 			i += 1
-			res.update(question_templates[templ_key]["function"](templ_key, den1, rel, den2))
+			_ = question_templates[templ_key]["function"](templ_key, den1, rel, den2)
+			res.update(_)
+			print(_)
 			if i > number:
 				break
 	return res
 
 if __name__ == '__main__':
 	kb = load_kb("kb.txt")
-	q = generate_questions(kb, 10)
+	q = generate_questions(kb, 110)
 	# print(q)
 	dump(q, open('q.json', 'w'), ensure_ascii = 0, indent = 4)
-	print(dumps(q, ensure_ascii = 0, indent = 4))
+	# print(dumps(q, ensure_ascii = 0, indent = 4))

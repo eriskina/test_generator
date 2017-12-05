@@ -5,12 +5,13 @@ import re
 from collections import defaultdict
 from random import uniform
 
-r_alphabet = re.compile(u'[a-zA-Zа-яА-Я0-9-]+|[.,:;?!]+')
+r_alphabet = re.compile(u'[а-яА-Я0-9-]+|[.,:;?!]+')
+r_jo = re.compile('ё')
 
 def gen_lines(corpus):
 	data = open(corpus)
 	for line in data:
-		yield line.lower()
+		yield re.sub(r_jo, 'е', line.lower())
 
 def gen_tokens(lines):
 	for line in lines:
@@ -55,7 +56,7 @@ def train(corpus):
 			model[t0, t1].append((t2, freq/bi[t0, t1]))
 		else:
 			model[t0, t1] = [(t2, freq/bi[t0, t1])]
-	print(model)
+	print (model)
 	return model
 
 def generate_sentence(model):
@@ -71,6 +72,8 @@ def generate_sentence(model):
 	return phrase.capitalize()
 
 if __name__ == '__main__':
-	model = train('qa')
-	for i in range(10):
+	model = train('/tmp/rez.txt')
+	import pickle
+	pickle.dump(model, open('model','wb'))
+	for i in range(100):
 		print (generate_sentence(model))
