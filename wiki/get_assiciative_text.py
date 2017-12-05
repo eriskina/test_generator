@@ -21,7 +21,7 @@ def get_graph(definition = "Дерево", n = 0):
 		#print(tree)
 
 if __name__ == '__main__':
-	get_graph("искусственный интеллект", 0)
+	get_graph("Защита информации", 0)
 	print("digraph g {\n\trankdir=LR;")
 	for definition, word in tree.keys():
 		print("\t\"%s\" -> \"%s\"" % (definition, word))
