@@ -1,4 +1,4 @@
-from json import dump, dumps
+nltkfrom json import dump, dumps
 from re import findall, match
 from random import randint
 def load_kb(filename = "kb.txt"):
