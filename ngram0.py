@@ -5,7 +5,7 @@ import re
 from collections import defaultdict
 from random import uniform
 
-r_alphabet = re.compile(u'[a-zA-Zа-яА-Я0-9-]+|[.,:;?!]+')
+r_alphabet = re.compile(u'[а-яА-Я0-9-]+|[.,:;?!]+')
 
 def gen_lines(corpus):
 	data = open(corpus)
@@ -55,6 +55,7 @@ def train(corpus):
 			model[t0, t1].append((t2, freq/bi[t0, t1]))
 		else:
 			model[t0, t1] = [(t2, freq/bi[t0, t1])]
+	print (model)
 	return model
 
 def generate_sentence(model):
@@ -70,6 +71,6 @@ def generate_sentence(model):
 	return phrase.capitalize()
 
 if __name__ == '__main__':
-	model = train('qa')
+	model = train('rez.txt')
 	for i in range(10):
 		print (generate_sentence(model))
