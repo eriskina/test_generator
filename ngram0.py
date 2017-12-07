@@ -74,8 +74,8 @@ def generate_sentence(model):
 if __name__ == '__main__':
 	model = train('/tmp/1')
 	print(model)
-	# import pickle
+	import pickle
 	# pickle.dump(model, open('model','wb'))
-	# model = pickle.load(open('model','rb'))
+	model = pickle.load(open('model','rb'))
 	for i in range(100):
 		print (generate_sentence(model))
