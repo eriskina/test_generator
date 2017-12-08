@@ -3,6 +3,7 @@ from re import findall, match
 from random import randint
 from pymystem3 import Mystem
 from ngramm import ngramm_sentence
+from model_a import model
 
 ma = Mystem()
 
@@ -79,7 +80,11 @@ def generate_questions(kb = {}, number = 10):
 					rez += [template[i]]
 			return rez
 
-		q = ngramm_sentence(generate_question(den1, templ_key))
+		q = generate_question(den1, templ_key)
+		try:
+			q = ngramm_sentence(q, model, ma)
+		except Exception as e:
+			print(q)
 		answers = generate_answers(den1, rel, den2)
 		return {"%s) %s" % (i, q):answers}
 
