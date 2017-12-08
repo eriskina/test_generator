@@ -1,6 +1,11 @@
 from json import dump, dumps
 from re import findall, match
 from random import randint
+from pymystem3 import Mystem
+from ngramm import ngramm_sentence
+
+ma = Mystem()
+
 def load_kb(filename = "kb.txt"):
 	res = {}
 	for str in open("kb.txt").readlines():
@@ -16,6 +21,15 @@ def load_kb(filename = "kb.txt"):
 	return res
 
 def generate_questions(kb = {}, number = 10):
+	def tokenize(phraze = 'программная форма'):
+		rez = []
+		for a in ma.analyze(phraze):
+			try:
+				rez += [a['analysis'][0]['lex']]
+			except (KeyError, IndexError):
+				pass
+		return rez
+
 	def what_includes(text, den1, rel, den2):
 		def generate_answers(den1, rel, den2, n_incorrect = 3, n_correct = 1):
 			var = 'а'
@@ -47,20 +61,31 @@ def generate_questions(kb = {}, number = 10):
 			return res
 
 		def generate_question(den, template):
-			rez = template % (den, 0)
+			denotats = [den]
 			for den1, rel, den2 in kb.keys():
 				if den2 == den and rel in ["представлять собой", "cостоять из"] and kb[(den1, rel, den2)]:
-					rez = template % (den, den1)
+					denotats += [den1]
 					break
+
+			rez, j = [], 0
+			for i in range(len(template)):
+				if template[i] == "[D]":
+					try:
+						rez += tokenize(denotats[j])
+						j += 1
+					except IndexError:
+						pass
+				else:
+					rez += [template[i]]
 			return rez
 
-		q = generate_question(den1, templ_key)
+		q = ngramm_sentence(generate_question(den1, templ_key))
 		answers = generate_answers(den1, rel, den2)
 		return {"%s) %s" % (i, q):answers}
 
 	question_templates = {
 		"%s это:" : (""),
-		"Что включает в себя %s, как элемент %s" : {
+		("что", "включать", "[D]", "[D]") : {
 			"function" : what_includes,
 			"relations" : (r"представлять собой", "cостоять из"),
 			"weight": 1,
@@ -70,7 +95,8 @@ def generate_questions(kb = {}, number = 10):
 	}
 	res = {}
 	i = 0
-	templ_key = "Что включает в себя %s, как элемент %s" # question_templates.keys[0]
+	# templ_key = "Что включает в себя %s, как элемент %s" # question_templates.keys[0]
+	templ_key = ("что", "включать", "[D]", "[D]")
 	templ_relation_re = question_templates[templ_key]["relations"][0]
 	for den1, rel, den2 in kb.keys():
 		if match(templ_relation_re, rel) and kb[(den1, rel, den2)]:

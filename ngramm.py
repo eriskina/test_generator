@@ -1,9 +1,4 @@
 from random import uniform
-from pymystem3 import Mystem
-
-from model_a import model
-
-ma = Mystem()
 
 def compare(S1,S2):
 	ngrams = [S1[i:i+3] for i in range(len(S1))]
@@ -30,7 +25,7 @@ def unirand(seq, used):
 	except AssertionError:
 		raise ValueError("Nothing found for %s" % seq)
 
-def get_from_model(t0, t1):
+def get_from_model(model, t0, t1):
 	try:
 		rez = model[(t0, t1)]
 	except KeyError:
@@ -45,9 +40,9 @@ def get_from_model(t0, t1):
 	# print(rez)
 	return rez
 
-def find_pair(t0, t1, t2, used):
+def find_pair(model, t0, t1, t2, used):
 	max = ('', 0)
-	for t, p_n in [ _ for _ in get_from_model(t0, t1) ]:
+	for t, p_n in [ _ for _ in get_from_model(model, t0, t1) ]:
 		p_w = compare(t, t2)
 		if t in used: p_w /= 2
 		if p_w > 0.62:
@@ -64,7 +59,7 @@ def find_pair(t0, t1, t2, used):
 
 	return max[0]
 
-def sentence(meaning):
+def ngramm_sentence(tokens, model, mystem):
 	t0, t1 = '$', '$'
 	used = []
 	phrase = ''
@@ -72,10 +67,10 @@ def sentence(meaning):
 	while 1:
 		# print(i, tokens[meaning[i]])
 		try:
-			t0, t1 = t1, find_pair(t0, t1, tokens[meaning[i]], used)
+			t0, t1 = t1, find_pair(model, t0, t1, tokens[i], used)
 			i += 1
 		except (ValueError, IndexError):
-			_ = get_from_model(t0, t1)
+			_ = get_from_model(model, t0, t1)
 			_t1 = t1
 			try:
 				__t1 = unirand(_, used)
@@ -84,7 +79,7 @@ def sentence(meaning):
 				__t1 = '$'
 			t0, t1 = t1, __t1
 			try:
-				if t1 == ma.analyze(_t1)[0]['analysis'][0]['lex']:
+				if t1 == mystem.analyze(_t1)[0]['analysis'][0]['lex']:
 					i += 1
 			except (KeyError, IndexError):
 				pass
@@ -97,35 +92,15 @@ def sentence(meaning):
 
 	return phrase
 
-tokens = ["что",
-		  "сигнал",
-		  "двоичный",
-		  "код",
-		  "блок-схема",
-		  "псевдокод",
-		  "программный",
-		  "форма",
-		  "информационный",
-		  "ресурс",
-		  "текстуальный",
-		  "пролог",
-		  "включать",
-		  "в",
-		  "себя",
-		  "язык",
-		  "как"]
 
-# meaning = [0,12,13,14,1,2]
-# print([tokens[i] for i in meaning], sentence(meaning))
-# meaning = [0,12,13,14,10,11]
-# print([tokens[i] for i in meaning], sentence(meaning))
-# meaning = [0,12,13,14,8,9]
-# print([tokens[i] for i in meaning], sentence(meaning))
-meaning = [0,12,6,7]
-print([tokens[i] for i in meaning], sentence(meaning))
-meaning = [0,12,11,16,15]
-print([tokens[i] for i in meaning], sentence(meaning))
-meaning = [0,12,5]
-print([tokens[i] for i in meaning], sentence(meaning))
-meaning = [0,12,4]
-print([tokens[i] for i in meaning], sentence(meaning))
+if __name__ == '__main__':
+	from pymystem3 import Mystem
+	from model_a import model
+	ma = Mystem()
+
+	tests = [['что', 'включать', 'двоичный', 'код'],
+			 ['что', 'включать', 'блок-схема'],
+			 ['что', 'такое', 'пролог'],
+			 ['что', 'включать', 'непрерывный', 'физический', 'величина']]
+	for test in tests:
+		print(test, ngramm_sentence(test,model,ma))

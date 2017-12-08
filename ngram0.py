@@ -56,7 +56,7 @@ def train(corpus):
 			model[t0, t1].append((t2, freq/bi[t0, t1]))
 		else:
 			model[t0, t1] = [(t2, freq/bi[t0, t1])]
-	print (model)
+	# print (model)
 	return model
 
 def generate_sentence(model):
@@ -76,6 +76,6 @@ if __name__ == '__main__':
 	print(model)
 	import pickle
 	pickle.dump(model, open('model-a','wb'))
-	# model = pickle.load(open('model','rb'))
+	model = pickle.load(open('model-a','rb'))
 	for i in range(10):
 		print (generate_sentence(model))
