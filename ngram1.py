@@ -1,31 +1,11 @@
 from random import uniform
 from pymystem3 import Mystem
 
-model = {
-	('маша', 'сидят'): [('на', 1.0)],
-	('$', 'леша'): [('и', 1.0)],
-	('леша', 'и'): [('леша', 1.0)],
-	('$', 'маша'): [('и', 1.0)],
-	('лена', 'и'): [('маша', 0.5), ('лера', 0.2)],
-	('леша', 'сидят'): [('на', 1.0)],
-	('сидят', 'на'): [('стуле', 1.0)],
-	('лера', 'и'): [('маша', 0.5), ('лена', 0.5)],
-	('и', 'леша'): [('сидят', 1.0)],
-	('стуле', '.'): [('$', 1.0)],
-	('маша', 'и'): [('леша', 1.0)],
-	('и', 'маша'): [('сидят', 1.0)],
-	('$', 'лена'): [('и', 1.0)],
-	('.', '$'): [('$', 1.0)],
-	('и', 'лена'): [('сидят', 1.0)],
-	('лена', 'сидят'): [('на', 1.0)],
-	('$', '$'): [('лена', 0.2), ('лера', 0.4), ('леша', 0.2), ('маша', 0.2)],
-	('$', 'лера'): [('и', 1.0)],
-	('на', 'стуле'): [('.', 1.0)],
-}
+# import pickle
+# pickle.dump(model, open('model-a','wb'))
+# model = pickle.load(open('model-a','rb'))
 
-tokens = ['и', 'лена', 'лера', 'леша', 'маша', 'на', 'сидеть', 'стул']
-
-meaning = [1, 2, 7]
+from model_a import model
 
 ma = Mystem()
 
@@ -37,15 +17,22 @@ def compare(S1,S2):
 
 	return count/max(len(S1), len(S2))
 
-def unirand(seq):
-	sum_, freq_ = 0, 0
+def unirand(seq, used):
+	rez, sum_, freq_ = None, 0, 0
 	for item, freq in seq:
 		sum_ += freq
 	rnd = uniform(0, sum_)
 	for token, freq in seq:
-		freq_ += freq
+		if token not in used: freq_ += freq
+		else: freq_ += freq / 2
 		if rnd < freq_:
-			return token
+			rez = token
+
+	try:
+		assert rez != None
+		return rez
+	except AssertionError:
+		raise ValueError("Nothing found for %s" % seq)
 
 def get_from_model(t0, t1):
 	try:
@@ -62,54 +49,87 @@ def get_from_model(t0, t1):
 	# print(rez)
 	return rez
 
-def find_pair(t0, t1, t2):
+def find_pair(t0, t1, t2, used):
 	max = ('', 0)
 	for t, p_n in [ _ for _ in get_from_model(t0, t1) ]:
 		p_w = compare(t, t2)
-		if p_w > 0.65:
+		if t in used: p_w /= 2
+		if p_w > 0.62:
 			p = p_n * p_w
 			if p > max[1]:
 				max = (t, p)
 
-	print('>>> t0 = %s, t1 = %s , t2 = %s , max = %s' % (t0, t1, t2, max) )
+	# print('>>> t0 = %s, t1 = %s , t2 = %s , max = %s' % (t0, t1, t2, max) )
 	try:
 		assert max != ('', 0)
 	except AssertionError:
+		# print(compare("включает", "включать"))
 		raise ValueError('Pair not found for word %s!' % t2)
 
 	return max[0]
 
-def sentence(meaning = meaning):
+def sentence(meaning):
 	t0, t1 = '$', '$'
+	used = []
 	phrase = ''
 	i = 0
 	while 1:
+		# print(i, tokens[meaning[i]])
 		try:
-			t0, t1 = t1, find_pair(t0, t1, tokens[meaning[i]])
+			t0, t1 = t1, find_pair(t0, t1, tokens[meaning[i]], used)
 			i += 1
 		except (ValueError, IndexError):
 			_ = get_from_model(t0, t1)
-			t0, t1 = t1, unirand(_)
+			_t1 = t1
 			try:
-				if t1 == ma.analyze(t1)[0]['analysis'][0]['lex']:
+				__t1 = unirand(_, used)
+				# print(__t1)
+			except ValueError:
+				__t1 = '$'
+			t0, t1 = t1, __t1
+			try:
+				if t1 == ma.analyze(_t1)[0]['analysis'][0]['lex']:
 					i += 1
 			except (KeyError, IndexError):
 				pass
-		if t1 == '$': break
+		if t1 == '$' or not t1 or len(used) > len(meaning): break
 		if t1 in '.!?,;:' or t0 == '$':
 			phrase += t1
 		else:
 			phrase += ' ' + t1
-		print(phrase)
+		used += [t1]
 
 	return phrase
-		# t0, t1 = '$', '$'
-		# while 1:
-		# 	t0, t1 = t1, unirand(model[t0, t1])
-		# 	if t1 == '$': break
-		# 	if t1 in ('.!?,;:') or t0 == '$':
-		# 		phrase += t1
-		# 	else:
-		# 		phrase += ' ' + t1
 
-print(sentence())
+tokens = ["что",
+		  "сигнал",
+		  "двоичный",
+		  "код",
+		  "блок-схема",
+		  "псевдокод",
+		  "программный",
+		  "форма",
+		  "информационный",
+		  "ресурс",
+		  "текстуальный",
+		  "пролог",
+		  "включать",
+		  "в",
+		  "себя",
+		  "язык",
+		  "как"]
+
+# meaning = [0,12,13,14,1,2]
+# print([tokens[i] for i in meaning], sentence(meaning))
+# meaning = [0,12,13,14,4,5]
+# print([tokens[i] for i in meaning], sentence(meaning))
+# meaning = [0,12,13,14,10,11]
+# print([tokens[i] for i in meaning], sentence(meaning))
+# meaning = [0,12,13,14,8,9]
+# print([tokens[i] for i in meaning], sentence(meaning))
+meaning = [0,12,13,14,6,7]
+print([tokens[i] for i in meaning], sentence(meaning))
+meaning = [0,12,13,14,11,16,15]
+print([tokens[i] for i in meaning], sentence(meaning))
+meaning = [0,12,11,16,15]
+print([tokens[i] for i in meaning], sentence(meaning))
