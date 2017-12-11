@@ -9,7 +9,7 @@ ma = Mystem()
 
 def load_kb(filename = "kb.txt"):
 	res = {}
-	for str in open("kb.txt").readlines():
+	for str in open(filename).readlines():
 		try:
 			a, b, c = findall(r'.*?"(.*?)".*?"(.*?)".*?"(.*?)".*', str.lower())[0]
 			res.update({(a,c,b):1})
@@ -92,7 +92,7 @@ def generate_questions(kb = {}, number = 10):
 		"%s это:" : (""),
 		("что", "включать", "[D]", "[D]") : {
 			"function" : what_includes,
-			"relations" : (r"представлять собой", "cостоять из"),
+			"relations" : (r"представлять собой", "cостоять из", 'может быть'),
 			"weight": 1,
 		},
 		"%s состоит из" : 1,
@@ -102,7 +102,7 @@ def generate_questions(kb = {}, number = 10):
 	i = 0
 	# templ_key = "Что включает в себя %s, как элемент %s" # question_templates.keys[0]
 	templ_key = ("что", "включать", "[D]", "[D]")
-	templ_relation_re = question_templates[templ_key]["relations"][0]
+	templ_relation_re = question_templates[templ_key]["relations"][2]
 	for den1, rel, den2 in kb.keys():
 		if match(templ_relation_re, rel) and kb[(den1, rel, den2)]:
 			# print(den1, rel, templ_relation_re, den2)
@@ -115,8 +115,10 @@ def generate_questions(kb = {}, number = 10):
 	return res
 
 if __name__ == '__main__':
-	kb = load_kb("kb.txt")
+	import sys
+	kb = load_kb(sys.argv[1])
+	# print(kb)
 	q = generate_questions(kb, 110)
 	# print(q)
 	dump(q, open('q.json', 'w'), ensure_ascii = 0, indent = 4)
-	# print(dumps(q, ensure_ascii = 0, indent = 4))
+	print(dumps(q, ensure_ascii = 0, indent = 4))
